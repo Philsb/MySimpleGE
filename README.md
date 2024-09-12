@@ -1,4 +1,4 @@
-# MyTinyGE
+# MySimpleGE
 Tiny, simple, and modular game engine
 
 # Core Requirements
