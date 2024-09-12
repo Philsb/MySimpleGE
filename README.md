@@ -22,8 +22,10 @@ Tiny, simple, and modular game engine
 - GUI
 - Animation System
 
-# Technology Specs
+# Third Party Tech Stack
 - DearImGui
-- SDL
-- 
+- SDL2
+- GLAD
+- Bullet Physics
+- STB images
 
