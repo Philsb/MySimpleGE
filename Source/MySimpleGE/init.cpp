@@ -1,8 +1,8 @@
-#include <MyTinyGE/init.h>
+#include <init.h>
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
 #include <iostream>
-#include <MyTinyGE/openglErrorReporting.h>
+#include <openglErrorReporting.h>
 
 #pragma region imgui
 #include "imgui.h"
