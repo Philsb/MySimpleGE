@@ -12,6 +12,6 @@ add_subdirectory(Thirdparty/glm)			#math
 add_subdirectory(Thirdparty/imgui-docking)		#ui
 
 add_library(MySimpleGE)
-target_sources(MySimpleGE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/MyTinyGE/init.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Source/MyTinyGE/openglErrorReporting.cpp")
+target_sources(MySimpleGE PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/Source/MyTinyGE/init.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Source/MySimpleGE/openglErrorReporting.cpp")
 target_include_directories(MySimpleGE PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Source/")
 target_link_libraries(MySimpleGE PUBLIC glm glad stb_image stb_truetype imgui SDL2-static)
