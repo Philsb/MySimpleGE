@@ -1,4 +1,4 @@
-#include "openglErrorReporting.h"
+#include "MySimpleGE/openglErrorReporting.h"
 #include <iostream>
 
 //https://learnopengl.com/In-Practice/Debugging
