@@ -132,6 +132,8 @@ int init_engine()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 
+
+	#pragma region imgui
 		// Example ImGui window
 		ImGui::Begin("Test Window");
 		
@@ -142,8 +144,6 @@ int init_engine()
 		
 		ImGui::End();
 
-
-	#pragma region imgui
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
