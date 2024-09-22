@@ -1,17 +1,21 @@
 #pragma once
-
-//Opaque handle to gl context same as SDL handles it
-typedef void* GLContext;
+#include <glad/glad.h>
+#include <MySimpleGE/Renderer/GLSLShader.h>
 
 namespace MSGE 
 {
 
 class OpenGLRenderer {
-    OpenGLRenderer() = delete;
-    OpenGLRenderer(GLContext context);
+public:
+    OpenGLRenderer();
     ~OpenGLRenderer();
 
-    void Render();
+    int init(GLADloadproc);
+    void render();
+private:
+    GLuint _triangleVBO;
+    GLuint _vao;
+    GLSLShader _shader;
 
 };
 }

@@ -1,3 +1,6 @@
 #pragma once
 
-int init_engine();
+namespace MSGE 
+{
+    int init_engine();
+}

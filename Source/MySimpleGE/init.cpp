@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <MySimpleGE/openglErrorReporting.h>
+#include <MySimpleGE/Renderer/OpenGLRenderer.h>
 
 #pragma region imgui
 #include "imgui.h"
@@ -12,6 +13,8 @@
 #pragma endregion
 
 
+namespace MSGE
+{
 int init_engine()
 {
 	// Initialize SDL
@@ -64,6 +67,10 @@ int init_engine()
 
 	// Enable OpenGL error reporting
 	enableReportGlErrors();
+
+	OpenGLRenderer renderer;
+
+	bool canRender = renderer.init((GLADloadproc)SDL_GL_GetProcAddress);
 
 #pragma region imgui
 	ImGui::CreateContext();
@@ -129,8 +136,13 @@ int init_engine()
 		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 	#pragma endregion
 
-		glClear(GL_COLOR_BUFFER_BIT);
 
+
+		glClear(GL_COLOR_BUFFER_BIT);
+		if (canRender)
+		{
+			renderer.render();
+		}
 
 
 	#pragma region imgui
@@ -173,3 +185,5 @@ int init_engine()
 	return 0;
 }
 
+
+}
