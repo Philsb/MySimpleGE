@@ -70,7 +70,7 @@ int init_engine()
 
 	OpenGLRenderer renderer;
 
-	bool canRender = renderer.init((GLADloadproc)SDL_GL_GetProcAddress);
+	int canRender = renderer.init((GLADloadproc)SDL_GL_GetProcAddress);
 
 #pragma region imgui
 	ImGui::CreateContext();
@@ -139,7 +139,7 @@ int init_engine()
 
 
 		glClear(GL_COLOR_BUFFER_BIT);
-		if (canRender)
+		if (canRender == 0)
 		{
 			renderer.render();
 		}

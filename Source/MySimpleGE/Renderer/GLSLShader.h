@@ -21,6 +21,8 @@ public:
     void useShader();
     ~GLSLShader();
 private:
+
+
     GLuint _vertexShader;
     GLuint _fragmentShader;
     GLuint _shaderProgram;

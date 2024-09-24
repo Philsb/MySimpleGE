@@ -41,7 +41,7 @@ void GLSLShader::createShader(const std::string& vShaderSource, const std::strin
     }
 
     _fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    auto fShaderSource_c = vShaderSource.c_str();
+    auto fShaderSource_c = fShaderSource.c_str();
     glShaderSource(_fragmentShader, 1, &fShaderSource_c, NULL);
     glCompileShader(_fragmentShader);
 
