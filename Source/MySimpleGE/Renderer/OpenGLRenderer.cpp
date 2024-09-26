@@ -1,5 +1,5 @@
 #include <MySimpleGE/Renderer/OpenGLRenderer.h>
-
+#include <MySimpleGE/Core/Mesh.h>
 namespace MSGE 
 {
 OpenGLRenderer::OpenGLRenderer() 
@@ -7,32 +7,14 @@ OpenGLRenderer::OpenGLRenderer()
 
 }
 
+OpenGLRenderer::~OpenGLRenderer()
+{
+}
+
 int OpenGLRenderer::init(GLADloadproc glLoader) 
 {
     if (!gladLoadGLLoader(glLoader))
         return 1;
-
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-        0.5f, -0.5f, 0.0f,
-        0.0f,  0.5f, 0.0f
-    };
-
-    glGenVertexArrays(1, &_vao);  
-    glBindVertexArray(_vao);
-
-    //----------
-
-    glGenBuffers(1, &_triangleVBO); 
-
-    glBindBuffer(GL_ARRAY_BUFFER, _triangleVBO); 
-
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    
-    glEnableVertexAttribArray(0);  
-
 
     const std::string vertexShaderSource = "#version 330 core\n"
     "layout (location = 0) in vec3 aPos;\n"
@@ -53,21 +35,28 @@ int OpenGLRenderer::init(GLADloadproc glLoader)
     {
         return 1;
     }
-
+    
     _shader.useShader();
+
+    //Buffer creation;
+    Mesh mesh1(0.0);
+    _meshBuffer1.createBuffers(mesh1.getVertices());
+
+    //Buffer creation;
+    Mesh mesh2(-.5);
+    _meshBuffer2.createBuffers(mesh2.getVertices());
 
     return 0;
 }
 
 void OpenGLRenderer::render() 
 {
+    _meshBuffer1.bind();
     glDrawArrays(GL_TRIANGLES, 0, 3);
-}
 
-OpenGLRenderer::~OpenGLRenderer()
-{
-    glDeleteVertexArrays(1, &_vao);
-    glDeleteBuffers(1, &_triangleVBO);
+    _meshBuffer2.bind();
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
 }
 
 }

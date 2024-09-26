@@ -4,6 +4,8 @@
 #include <iostream>
 #include <MySimpleGE/openglErrorReporting.h>
 #include <MySimpleGE/Renderer/OpenGLRenderer.h>
+#include <MySimpleGE/Core/ResourceManager.h>
+#include <MySimpleGE/Core/Singleton.h>
 
 #pragma region imgui
 #include "imgui.h"
@@ -69,6 +71,10 @@ int init_engine()
 	enableReportGlErrors();
 
 	OpenGLRenderer renderer;
+	std::cout<< "BRUH:" << std::endl;
+	auto resManager = Singleton<ResourceManager>::getInstance();
+	
+
 
 	int canRender = renderer.init((GLADloadproc)SDL_GL_GetProcAddress);
 
