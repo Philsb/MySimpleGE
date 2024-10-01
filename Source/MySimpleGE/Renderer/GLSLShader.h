@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <glad/glad.h>
+#include <MySimpleGE/Renderer/GLResource.h>
+#include <glm/glm.hpp>
 
 namespace MSGE 
 {
@@ -11,21 +13,24 @@ enum class GLSLShaderStatus
     SHADER_COMPILE_FAILURE,
     SHADER_NOT_INITIALIZED
 };
-
-class GLSLShader 
+class GLSLShader : public IGLResource
 {
 public:
     GLSLShader();
-    void createShader(const std::string& vShaderSource, const std::string& fShaderSource);
-    GLSLShaderStatus getStatus(){return _status;};
-    void useShader();
     ~GLSLShader();
+
+    void setAndCompileShader(const std::string& vShaderSource, const std::string& fShaderSource);
+    GLSLShaderStatus getStatus(){return _status;};
+    void create() override;
+    void bind() override;
+    void unbind() override;
+
+    void setTextureUniform(const std::string& uniformName, GLint textureId);
+    void setMat4Uniform(const std::string& uniformName, glm::mat4 matrix);
+    
 private:
-
-
-    GLuint _vertexShader;
-    GLuint _fragmentShader;
     GLuint _shaderProgram;
+    bool _isBound;
     GLSLShaderStatus _status;
 };
 

@@ -2,16 +2,18 @@
 
 namespace MSGE
 {
-Mesh::Mesh(float offset)
-{
-   _vertices = {
-                {glm::vec3{-0.5f + offset, -0.5f + offset, 0.0f}},
-                {glm::vec3{0.5f + offset, -0.5f + offset, 0.0f}},
-                {glm::vec3{0.0f + offset,  0.5f + offset, 0.0f}}
-                };
-    
+Mesh::Mesh()
+{  
 
 }
-Mesh::~Mesh(){}
+Mesh::~Mesh()
+{
+}
+
+void Mesh::setGeometry(const std::vector<MeshVertex>& vertices, const std::vector<unsigned int>& indices)
+{
+   _vertices = std::move(vertices);
+   _indices = std::move(indices);
+}
 
 }

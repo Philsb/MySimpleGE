@@ -4,8 +4,19 @@
 #include <iostream>
 #include <MySimpleGE/openglErrorReporting.h>
 #include <MySimpleGE/Renderer/OpenGLRenderer.h>
-#include <MySimpleGE/Core/ResourceManager.h>
+#include <MySimpleGE/Core/Resources/ResourceManager.h>
+#include <MySimpleGE/Core/Resources/MeshResource.h>
+#include <MySimpleGE/Core/Resources/Texture2dResource.h>
+
+#include <MySimpleGE/Renderer/GLMeshBuffer.h>
+#include <MySimpleGE/Renderer/GLTexture2d.h>
+#include <MySimpleGE/Renderer/GLSLShader.h>
+#include <MySimpleGE/Renderer/GLStaticModelRenderRequest.h>
+
 #include <MySimpleGE/Core/Singleton.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #pragma region imgui
 #include "imgui.h"
@@ -71,11 +82,16 @@ int init_engine()
 	enableReportGlErrors();
 
 	OpenGLRenderer renderer;
-	std::cout<< "BRUH:" << std::endl;
 	auto resManager = Singleton<ResourceManager>::getInstance();
-	
 
+	/*{
+		std::shared_ptr<Mesh> mesh_ptr1 = resManager->load<Mesh>("BRUHHHHH");
+		std::shared_ptr<Mesh> mesh_ptr2 = resManager->load<Mesh>("BRUHHHHH");
 
+		std::cout << "IMAGE Vertex:" << mesh_ptr2->getVertices()[0].position.x << std::endl;
+	}
+
+	std::cout << "MAP COUNT REFERENCES:" << resManager->getCacheMap().size() << std::endl;*/
 	int canRender = renderer.init((GLADloadproc)SDL_GL_GetProcAddress);
 
 #pragma region imgui
@@ -106,6 +122,67 @@ int init_engine()
 	ImGui_ImplSDL2_InitForOpenGL(window, glContext);
 	ImGui_ImplOpenGL3_Init("#version 330");
 #pragma endregion
+
+	const std::string vertexShaderSource = "#version 330 core\n"
+    "layout (location = 0) in vec3 aPos;\n"
+    "layout (location = 1) in vec3 aNorm;\n"
+	"layout (location = 2) in vec2 aUV1;\n"
+    "uniform mat4 modelMat; \n"
+    "uniform mat4 projMat; \n"
+    "smooth out vec3 vertexNormal; \n"
+	"smooth out vec2 texCoord1; \n"
+    "void main()\n"
+    "{\n"
+	"   texCoord1 = aUV1;\n"
+    "   vertexNormal = (modelMat * vec4(aNorm,1.0)).xyz;\n"
+    "   gl_Position = projMat * modelMat * vec4(aPos, 1.0);\n"
+    "}\0";
+    const std::string fragmentShaderSource = "#version 330 core\n"
+    "smooth in vec3 vertexNormal;\n"
+	"smooth in vec2 texCoord1; \n"
+    "out vec4 FragColor;\n"
+	"uniform sampler2D albedo;\n"
+    "void main()\n"
+    "{\n"
+	"	vec4 texColor = texture(albedo, texCoord1);\n"
+    "   vec3 finalColor = texColor.rgb * mix (0.2, 1.0, (1.0 + dot(vertexNormal, vec3(0.0,1.0,0.0))) * 0.5);\n"
+    "   FragColor = vec4(finalColor, 1.0f);\n"
+    "}\n\0";
+	
+
+    auto meshBuffer1 = renderer.allocateGLResource<GLMeshBuffer>("Mesh1");
+    //auto mesh_ptr1 = resManager->load<Mesh>("Mesh1");
+
+	
+
+	MeshResource mr;
+	mr.load(RESOURCES_PATH + std::string("car.json"));
+
+	Texture2dResource t2dr;
+	t2dr.load(RESOURCES_PATH + std::string("img.png")); 
+
+	auto tex1 = renderer.allocateGLResource<GLTexture2d>("Tex1");
+	tex1->setData(t2dr.getWidth() , t2dr.getHeight(), t2dr.getImageData() );
+
+    meshBuffer1->setData(mr.getMeshData().getVertices(), mr.getMeshData().getIndices());
+
+    auto shader = renderer.allocateGLResource<GLSLShader>("Shader1");
+    shader->setAndCompileShader(vertexShaderSource, fragmentShaderSource);
+
+	/*
+    auto meshRenderReq1 = std::make_shared<GLStaticModelRenderRequest>();
+    meshRenderReq1->setMesh(meshBuffer1);
+    meshRenderReq1->setShader(shader);
+    meshRenderReq1->setModelMatrix(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
+	*/
+
+	auto meshRenderReq2 = std::make_shared<GLStaticModelRenderRequest>();
+    meshRenderReq2->setMesh(meshBuffer1);
+    meshRenderReq2->setShader(shader);
+    meshRenderReq2->setModelMatrix(glm::translate(glm::mat4(1.0f), glm::vec3(-0.0f, 0.0f, -5.0f)));
+	meshRenderReq2->setTextureUniform("albedo",0,tex1);
+    //renderer.addToRenderList(meshRenderReq1); 
+	renderer.addToRenderList(meshRenderReq2); 
 
 	// Main event loop
 	bool running = true;
@@ -143,8 +220,13 @@ int init_engine()
 	#pragma endregion
 
 
+		/*glm::mat4 modelMat1 = meshRenderReq1->getModelMatrix();
+		meshRenderReq1->setModelMatrix(glm::rotate(modelMat1, glm::radians(4.0f), glm::vec3(1.0f, 0.3f, 0.5f)));*/
 
-		glClear(GL_COLOR_BUFFER_BIT);
+		glm::mat4 modelMat2 = meshRenderReq2->getModelMatrix();
+		meshRenderReq2->setModelMatrix(glm::rotate(modelMat2, glm::radians(0.5f), glm::vec3(0.0f, 1.0f, 0.0f)));
+		
+		
 		if (canRender == 0)
 		{
 			renderer.render();
@@ -178,6 +260,8 @@ int init_engine()
 
 		SDL_GL_SwapWindow(window);
 	}
+
+	renderer.printResources();
 
 	// Cleanup ImGui
 	ImGui_ImplOpenGL3_Shutdown();

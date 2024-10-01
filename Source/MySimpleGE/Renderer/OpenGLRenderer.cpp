@@ -1,5 +1,9 @@
 #include <MySimpleGE/Renderer/OpenGLRenderer.h>
+#include <MySimpleGE/Renderer/GLTexture2d.h>
+#include <MySimpleGE/Renderer/GLResource.h>
+#include <MySimpleGE/Renderer/GLStaticModelRenderRequest.h>
 #include <MySimpleGE/Core/Mesh.h>
+#include <glm/gtc/matrix_transform.hpp>
 namespace MSGE 
 {
 OpenGLRenderer::OpenGLRenderer() 
@@ -9,54 +13,85 @@ OpenGLRenderer::OpenGLRenderer()
 
 OpenGLRenderer::~OpenGLRenderer()
 {
+    std::cout << "GL Resource Map count ref: " << _glResourceManager.getCacheMap().size() << std::endl;
+}
+
+bool OpenGLRenderer::hasGLResource(const std::string& id)
+{
+    return _glResourceManager.hasRef(id);
 }
 
 int OpenGLRenderer::init(GLADloadproc glLoader) 
 {
     if (!gladLoadGLLoader(glLoader))
         return 1;
-
-    const std::string vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main()\n"
-    "{\n"
-    "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-    "}\0";
-    const std::string fragmentShaderSource = "#version 330 core\n"
-    "out vec4 FragColor;\n"
-    "void main()\n"
-    "{\n"
-    "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-    "}\n\0";
-
-    _shader.createShader(vertexShaderSource, fragmentShaderSource);
-
-    if (_shader.getStatus() != GLSLShaderStatus::SHADER_VALID)
-    {
-        return 1;
-    }
     
-    _shader.useShader();
-
-    //Buffer creation;
-    Mesh mesh1(0.0);
-    _meshBuffer1.createBuffers(mesh1.getVertices());
-
-    //Buffer creation;
-    Mesh mesh2(-.5);
-    _meshBuffer2.createBuffers(mesh2.getVertices());
-
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glEnable(GL_DEPTH_TEST);  
+    glEnable(GL_CULL_FACE);
     return 0;
+}
+
+void OpenGLRenderer::emptyRenderList()
+{   
+    _renderList.clear();
+}
+
+void OpenGLRenderer::printResources()
+{
+    for (auto it : _glResourceManager.getCacheMap())
+    {
+        std::cout << "GL Reference: " << it.first << ", ref count" << it.second.use_count() << std::endl;
+    }
+}
+
+void OpenGLRenderer::addToRenderList(std::shared_ptr<GLStaticModelRenderRequest> renderRequest)
+{
+    return _renderList.push_back(renderRequest);
 }
 
 void OpenGLRenderer::render() 
 {
-    _meshBuffer1.bind();
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    _meshBuffer2.bind();
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    for (auto req : _renderList)
+    {
+        glm::mat4 projection = glm::perspective(glm::radians(90.0f), 4.0f/4.0f, 0.01f, 1000.0f);
 
+
+        
+        auto shader = req->getShader();
+        auto meshBuffer = req->getMesh();
+
+        shader->bind();
+        shader->setMat4Uniform("modelMat", req->getModelMatrix());
+        shader->setMat4Uniform("projMat", projection);
+        
+        //Bind textures
+        int slot = 0;
+        for (auto textureDesc : req->_textureUniforms)
+        {
+            if (textureDesc.valid)
+            {
+                glActiveTexture(GL_TEXTURE0+slot);
+                textureDesc.texture->bind();
+                shader->setTextureUniform(textureDesc.uniformName, slot);
+            }
+            slot++;
+        }
+
+        meshBuffer->bind();
+
+        glDrawElements(
+            GL_TRIANGLES,      // mode
+            meshBuffer->getIndexCount(),    // count
+            GL_UNSIGNED_INT,   // type
+            0          // element array buffer offset
+        );
+
+        shader->unbind();
+        meshBuffer->unbind();
+    }
 }
 
 }
