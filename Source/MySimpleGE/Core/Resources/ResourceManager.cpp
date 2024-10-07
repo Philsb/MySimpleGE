@@ -8,8 +8,8 @@ ResourceManager::ResourceManager()
 
 ResourceManager::~ResourceManager()
 {
-    
 }
+
 }
 
 

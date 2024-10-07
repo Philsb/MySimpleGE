@@ -3,6 +3,9 @@
 #include <MySimpleGE/Core/Resources/Resource.h>
 #include <type_traits>
 #include <string>
+#include <filesystem>
+#include <cassert>
+#include <MySimpleGE/Core/Utils/Timer.h>
 
 namespace MSGE 
 {
@@ -13,42 +16,25 @@ public:
     ~ResourceManager();
 
     template<typename T>
-    std::shared_ptr<T> load(const std::string& path)
+    std::shared_ptr<T> load(const ResourcePath& resPath)
     {
-        static_assert(std::is_base_of<IResource, T>::value, "loadable class is not of type Resource\n");
-        std::shared_ptr<T> resourceRef = std::dynamic_pointer_cast<T>(getRef(path));
+        static_assert(std::is_base_of<IResource, T>::value, "Loaded class is not of type Resource\n");
+
+        if (!std::filesystem::exists( resPath.getPath() ))
+        {
+            std::cerr << "Error: provided file doesn't exist: " << resPath.getPath() << "\n";
+            return std::shared_ptr<T>();
+        }
+
+        std::shared_ptr<T> resourceRef = std::dynamic_pointer_cast<T>(getRef(resPath.getRelativePath()));
         if (!resourceRef)
         {
-            std::cout << "Not found resource in cache. creating: " << path << std::endl;
-            resourceRef = std::dynamic_pointer_cast<T>( addRefUnique(path, static_cast<IResource*>(new T()) ) );
+            //std::cout << "Not found resource in cache. creating: " << resPath.getRelativePath() << std::endl;
+            resourceRef = std::dynamic_pointer_cast<T>( addRefUnique(resPath.getRelativePath(), static_cast<IResource*>(new T()) ) );
+            resourceRef->load(resPath);
         }
         assert(resourceRef);
         return resourceRef;
-        
-        /*
-        std::shared_ptr<T> resourceRef;
-        auto refIterator = _cachedResources.find(path);
-
-        // If the reference isn't found then instanciate a resource of type T and add it to the _cachedResources
-        if (refIterator == _cachedResources.end())
-        {
-            auto deleter = [=](IResource* resPtr) 
-            { 
-                this->_cachedResources.erase(path); 
-                delete resPtr;
-            };
-            resourceRef = std::shared_ptr<T>(new T(), deleter);
-            _cachedResources.insert({path, resourceRef});
-        }
-        else 
-        {
-            resourceRef = std::dynamic_pointer_cast<T>(refIterator->second.lock());
-        }
-       
-
-        assert(resourceRef);
-        return resourceRef;
-         */
     }
 };
 }

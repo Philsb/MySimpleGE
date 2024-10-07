@@ -1,12 +1,23 @@
 #include <MySimpleGE/Renderer/OpenGLRenderer.h>
 #include <MySimpleGE/Renderer/GLTexture2d.h>
+#include <MySimpleGE/Renderer/GLSLShader.h>
 #include <MySimpleGE/Renderer/GLResource.h>
 #include <MySimpleGE/Renderer/GLStaticModelRenderRequest.h>
 #include <MySimpleGE/Core/Mesh.h>
+#include <MySimpleGE/Core/Resources/Material.h>
+
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+
 namespace MSGE 
 {
-OpenGLRenderer::OpenGLRenderer() 
+
+const glm::mat4 OpenGLRenderer::ZUpMatrix = glm::rotate(glm::mat4(1.0),  glm::radians(-90.0f), glm::vec3(1.0,0.0,0.0));
+
+OpenGLRenderer::OpenGLRenderer()
 {
 
 }
@@ -45,7 +56,7 @@ void OpenGLRenderer::printResources()
     }
 }
 
-void OpenGLRenderer::addToRenderList(std::shared_ptr<GLStaticModelRenderRequest> renderRequest)
+void OpenGLRenderer::addToRenderList(std::shared_ptr<GLStaticMeshRenderRequest> renderRequest)
 {
     return _renderList.push_back(renderRequest);
 }
@@ -56,26 +67,24 @@ void OpenGLRenderer::render()
 
     for (auto req : _renderList)
     {
-        glm::mat4 projection = glm::perspective(glm::radians(90.0f), 4.0f/4.0f, 0.01f, 1000.0f);
-
-
-        
-        auto shader = req->getShader();
-        auto meshBuffer = req->getMesh();
+        auto shader = req->shader;
+        auto meshBuffer = req->meshBuffer;
 
         shader->bind();
-        shader->setMat4Uniform("modelMat", req->getModelMatrix());
-        shader->setMat4Uniform("projMat", projection);
+        shader->setMat4Uniform("modelMat", ZUpMatrix * req->modelMatrix);
+        shader->setMat4Uniform("viewMat", viewMatrix);
+        shader->setMat4Uniform("projMat", projectionMatrix);
         
         //Bind textures
         int slot = 0;
-        for (auto textureDesc : req->_textureUniforms)
+        for (const auto& textureUniform : req->texturesUniforms)
         {
-            if (textureDesc.valid)
+            auto glTextureRes = textureUniform.glTexture;
+            if (glTextureRes)
             {
                 glActiveTexture(GL_TEXTURE0+slot);
-                textureDesc.texture->bind();
-                shader->setTextureUniform(textureDesc.uniformName, slot);
+                glTextureRes->bind();
+                shader->setTextureUniform(textureUniform.uniformName, slot);
             }
             slot++;
         }
@@ -91,6 +100,16 @@ void OpenGLRenderer::render()
 
         shader->unbind();
         meshBuffer->unbind();
+
+        //unbind textures
+        for (const auto& textureUniform : req->texturesUniforms)
+        {
+            auto glTextureRes = textureUniform.glTexture;
+            if (glTextureRes)
+            {
+                glTextureRes->unbind();
+            }
+        }
     }
 }
 

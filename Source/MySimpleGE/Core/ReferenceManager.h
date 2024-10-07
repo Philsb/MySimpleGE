@@ -52,7 +52,7 @@ public:
         auto mapRef = _cachedReferences;
         auto deleter = [mapRef, id](T* ref) 
         { 
-            std::cout << "Deleting shared ptr: " << id << std::endl;
+            //std::cout << "Deleting shared ptr: " << id << std::endl;
             if (mapRef)
             {
                 mapRef->erase(id);        

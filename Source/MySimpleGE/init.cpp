@@ -1,22 +1,31 @@
 #include <MySimpleGE/init.h>
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
-#include <iostream>
+
 #include <MySimpleGE/openglErrorReporting.h>
-#include <MySimpleGE/Renderer/OpenGLRenderer.h>
 #include <MySimpleGE/Core/Resources/ResourceManager.h>
+#include <MySimpleGE/Core/Resources/Material.h>
 #include <MySimpleGE/Core/Resources/MeshResource.h>
 #include <MySimpleGE/Core/Resources/Texture2dResource.h>
-
-#include <MySimpleGE/Renderer/GLMeshBuffer.h>
-#include <MySimpleGE/Renderer/GLTexture2d.h>
-#include <MySimpleGE/Renderer/GLSLShader.h>
-#include <MySimpleGE/Renderer/GLStaticModelRenderRequest.h>
+#include <MySimpleGE/Renderer/OpenGLRenderer.h>
+#include <MySimpleGE/Core/Components/GLStaticMeshComponent.h>
+#include <MySimpleGE/Core/Utils/Timer.h>
 
 #include <MySimpleGE/Core/Singleton.h>
 
+#include <nlohmann/json.hpp>
+
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include <glm/gtc/matrix_inverse.hpp>
+#include <glm/gtx/quaternion.hpp>
+
+
+#include <iostream>
+#include <fstream>
+#include <algorithm> 
 
 #pragma region imgui
 #include "imgui.h"
@@ -28,6 +37,69 @@
 
 namespace MSGE
 {
+
+
+// Function to handle mouse movement and WASD key events
+void handleInput(SDL_Event& event, 
+				int& mouseDeltaX, int& mouseDeltaY, 
+				bool& moveForward, bool& moveBackward, bool& moveLeft, bool& moveRight) {
+    switch (event.type) {
+        case SDL_MOUSEMOTION:
+            // Get mouse movement deltas
+            mouseDeltaX = event.motion.xrel; // Relative x-axis movement
+            mouseDeltaY = event.motion.yrel; // Relative y-axis movement
+            //std::cout << "Mouse moved: (" << mouseDeltaX << ", " << mouseDeltaY << ")\n";
+            break;
+
+        case SDL_KEYDOWN:
+            // Handle WASD key presses
+            switch (event.key.keysym.sym) {
+                case SDLK_w:
+                    moveForward = true;
+                    //std::cout << "W pressed\n";
+                    break;
+                case SDLK_a:
+                    moveLeft = true;
+                    //std::cout << "A pressed\n";
+                    break;
+                case SDLK_s:
+                    moveBackward = true;
+                    //std::cout << "S pressed\n";
+                    break;
+                case SDLK_d:
+                    moveRight = true;
+                    //std::cout << "D pressed\n";
+                    break;
+            }
+            break;
+
+        case SDL_KEYUP:
+            // Handle WASD key releases
+            switch (event.key.keysym.sym) {
+                case SDLK_w:
+                    moveForward = false;
+                    //std::cout << "W released\n";
+                    break;
+                case SDLK_a:
+                    moveLeft = false;
+                    //std::cout << "A released\n";
+                    break;
+                case SDLK_s:
+                    moveBackward = false;
+                    //std::cout << "S released\n";
+                    break;
+                case SDLK_d:
+                    moveRight = false;
+                    //std::cout << "D released\n";
+                    break;
+            }
+            break;
+
+        default:
+            break;
+    }
+}
+
 int init_engine()
 {
 	// Initialize SDL
@@ -58,6 +130,8 @@ int init_engine()
 		return 1;
 	}
 
+
+		
 	// Create OpenGL context
 	SDL_GLContext glContext = SDL_GL_CreateContext(window);
 	if (glContext == nullptr)
@@ -67,6 +141,7 @@ int init_engine()
 		SDL_Quit();
 		return 1;
 	}
+	
 
 	// Load OpenGL functions using glad
 	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
@@ -78,20 +153,18 @@ int init_engine()
 		return 1;
 	}
 
+	// After context creation, set vsync off
+	if (SDL_GL_SetSwapInterval(0) != 0) {
+		std::cerr << "Failed to disable vsync: " << SDL_GetError() << std::endl;
+	}
+
 	// Enable OpenGL error reporting
 	enableReportGlErrors();
 
 	OpenGLRenderer renderer;
 	auto resManager = Singleton<ResourceManager>::getInstance();
 
-	/*{
-		std::shared_ptr<Mesh> mesh_ptr1 = resManager->load<Mesh>("BRUHHHHH");
-		std::shared_ptr<Mesh> mesh_ptr2 = resManager->load<Mesh>("BRUHHHHH");
-
-		std::cout << "IMAGE Vertex:" << mesh_ptr2->getVertices()[0].position.x << std::endl;
-	}
-
-	std::cout << "MAP COUNT REFERENCES:" << resManager->getCacheMap().size() << std::endl;*/
+	std::cout << "MAP COUNT REFERENCES:" << resManager->getCacheMap().size() << std::endl;
 	int canRender = renderer.init((GLADloadproc)SDL_GL_GetProcAddress);
 
 #pragma region imgui
@@ -123,67 +196,135 @@ int init_engine()
 	ImGui_ImplOpenGL3_Init("#version 330");
 #pragma endregion
 
-	const std::string vertexShaderSource = "#version 330 core\n"
-    "layout (location = 0) in vec3 aPos;\n"
-    "layout (location = 1) in vec3 aNorm;\n"
-	"layout (location = 2) in vec2 aUV1;\n"
-    "uniform mat4 modelMat; \n"
-    "uniform mat4 projMat; \n"
-    "smooth out vec3 vertexNormal; \n"
-	"smooth out vec2 texCoord1; \n"
-    "void main()\n"
-    "{\n"
-	"   texCoord1 = aUV1;\n"
-    "   vertexNormal = (modelMat * vec4(aNorm,1.0)).xyz;\n"
-    "   gl_Position = projMat * modelMat * vec4(aPos, 1.0);\n"
-    "}\0";
-    const std::string fragmentShaderSource = "#version 330 core\n"
-    "smooth in vec3 vertexNormal;\n"
-	"smooth in vec2 texCoord1; \n"
-    "out vec4 FragColor;\n"
-	"uniform sampler2D albedo;\n"
-    "void main()\n"
-    "{\n"
-	"	vec4 texColor = texture(albedo, texCoord1);\n"
-    "   vec3 finalColor = texColor.rgb * mix (0.2, 1.0, (1.0 + dot(vertexNormal, vec3(0.0,1.0,0.0))) * 0.5);\n"
-    "   FragColor = vec4(finalColor, 1.0f);\n"
-    "}\n\0";
 	
+	std::vector<std::shared_ptr<Material>> newMaterials;
 
-    auto meshBuffer1 = renderer.allocateGLResource<GLMeshBuffer>("Mesh1");
-    //auto mesh_ptr1 = resManager->load<Mesh>("Mesh1");
+	auto carMesh = resManager->load<MeshResource>("car.json");
+	auto carBodyTex = resManager->load<Texture2dResource>("car_body.png");
+	auto carChasisTex = resManager->load<Texture2dResource>("car_chasis.png");
 
+	auto matBody = resManager->load<Material>("car_body.mat.json");
+
+
+	auto matChasis = resManager->load<Material>("car_chasis.mat.json");
+
+	newMaterials.push_back(matBody);
+	newMaterials.push_back(matChasis);
 	
+	GLStaticMeshComponent comp(&renderer, "car.json", newMaterials);
+	comp.modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-0.0f, 0.0f, -5.0f));
+	comp.updateRequests();
+	comp.addRequestsToRenderList();
 
-	MeshResource mr;
-	mr.load(RESOURCES_PATH + std::string("car.json"));
+	GLStaticMeshComponent comp2(&renderer, "car.json", newMaterials);
+	comp2.modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-3.0f, 0.0f, -4.0f));
+	comp2.updateRequests();
+	comp2.addRequestsToRenderList();
+	
+	ScopedTimer st("SCENE LOAD: ");
+	#pragma region sceneload
 
-	Texture2dResource t2dr;
-	t2dr.load(RESOURCES_PATH + std::string("img.png")); 
+	std::ifstream f(ResourcePath("Scene1.scene.json"));
+    if (f)
+    {
+		using json = nlohmann::json;
+		std::vector<GLStaticMeshComponent> scene;
 
-	auto tex1 = renderer.allocateGLResource<GLTexture2d>("Tex1");
-	tex1->setData(t2dr.getWidth() , t2dr.getHeight(), t2dr.getImageData() );
+		json data = json::parse(f);
+		auto objectsArrayValue = data["objects"];
+		if (objectsArrayValue.is_array())
+		{
+			auto objectsArray = objectsArrayValue.get<json::array_t>();
+			for (auto object : objectsArray)
+			{
+				if (object.is_object())
+				{
+					glm::mat4 transform(1.0);
 
-    meshBuffer1->setData(mr.getMeshData().getVertices(), mr.getMeshData().getIndices());
+					glm::mat4 translationMatrix;
+					auto posVecValue = object["position"];
+					if (posVecValue.is_array())
+					{
+						auto posVec = posVecValue.get<json::array_t>();
+						glm::vec3 pos(1.0);
+						for (int i = 0; i < std::min(3, (int)posVec.size()) ; i++)
+						{
+							pos[i] = posVec[i];
+						}
+						translationMatrix = glm::translate(glm::mat4(1.0f), pos);
 
-    auto shader = renderer.allocateGLResource<GLSLShader>("Shader1");
-    shader->setAndCompileShader(vertexShaderSource, fragmentShaderSource);
+					}
 
-	/*
-    auto meshRenderReq1 = std::make_shared<GLStaticModelRenderRequest>();
-    meshRenderReq1->setMesh(meshBuffer1);
-    meshRenderReq1->setShader(shader);
-    meshRenderReq1->setModelMatrix(glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -10.0f)));
-	*/
+					glm::mat4 rotationMatrix;
+					auto rotVecValue = object["rotation"];
+					if (rotVecValue.is_array())
+					{
+						auto rotVec = rotVecValue.get<json::array_t>();
+						glm::vec3 rot(1.0);
+						for (int i = 0; i < std::min(3, (int)rotVec.size()) ; i++)
+						{
+							rot[i] = rotVec[i];
+						}
+						rotationMatrix = glm::yawPitchRoll(rot.y, rot.x, rot.z);
+					}
 
-	auto meshRenderReq2 = std::make_shared<GLStaticModelRenderRequest>();
-    meshRenderReq2->setMesh(meshBuffer1);
-    meshRenderReq2->setShader(shader);
-    meshRenderReq2->setModelMatrix(glm::translate(glm::mat4(1.0f), glm::vec3(-0.0f, 0.0f, -5.0f)));
-	meshRenderReq2->setTextureUniform("albedo",0,tex1);
-    //renderer.addToRenderList(meshRenderReq1); 
-	renderer.addToRenderList(meshRenderReq2); 
+					glm::mat4 scaleMatrix(1.0);
+					
+					auto scaleVecValue = object["scale"];
+					if (scaleVecValue.is_array())
+					{
+						auto scaleVec = scaleVecValue.get<json::array_t>();
+						glm::vec3 scale(1.0);
+						for (int i = 0; i < std::min(3, (int)scaleVec.size()) ; i++)
+						{
+							scale[i] = scaleVec[i];
+						}
+						scaleMatrix = glm::scale(glm::mat4(1.0f), scale);
+					}
 
+					transform = translationMatrix * rotationMatrix * scaleMatrix;
+
+					ResourcePath meshPath;
+					auto meshPathValue = object["mesh"];
+					if (meshPathValue.is_string())
+					{
+						meshPath = meshPathValue.get<std::string>();
+					}
+
+					std::vector<std::shared_ptr<Material>> objectMaterials;
+					auto matArrayValue = object["matOverrides"];
+					if ( matArrayValue.is_array())
+					{
+						auto matArray = matArrayValue.get<json::array_t>();
+						for (auto matPath : matArray)
+						{
+							if (matPath.is_string())
+							{
+								auto matRes = resManager->load<Material>( matPath.get<std::string>() );
+								if (matRes)
+								{
+									objectMaterials.push_back(matRes);
+								}
+							}
+
+						} 
+					}
+					GLStaticMeshComponent staticMeshComp(&renderer, meshPath, objectMaterials);
+					staticMeshComp.modelMatrix = transform;
+					staticMeshComp.updateRequests();
+					staticMeshComp.addRequestsToRenderList();
+				}
+			}     
+		}
+	}
+
+	#pragma endregion
+	st.stop();
+
+	float cameraYaw = 0.0;
+	float cameraPitch = 0.0;
+	glm::vec3 cameraPos = glm::vec3(0.0);
+	
 	// Main event loop
 	bool running = true;
 	while (running)
@@ -191,6 +332,10 @@ int init_engine()
 		int w = 0, h = 0;
 		SDL_GetWindowSize(window, &w, &h);
 		glViewport(0, 0, w, h);
+
+		// Variables to store input data
+		int mouseDeltaX = 0, mouseDeltaY = 0;
+		bool moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
 
 		SDL_Event event;
 		while (SDL_PollEvent(&event))
@@ -209,24 +354,59 @@ int init_engine()
 					running = false;
 				}
 			}
+
+			handleInput(event, mouseDeltaX, mouseDeltaY, moveForward, moveBackward, moveLeft, moveRight);
 		}
 
 	#pragma region imgui
+		
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame(window);
 		ImGui::NewFrame();
 		// Create a docking space
-		ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+		//ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
 	#pragma endregion
-
-
-		/*glm::mat4 modelMat1 = meshRenderReq1->getModelMatrix();
-		meshRenderReq1->setModelMatrix(glm::rotate(modelMat1, glm::radians(4.0f), glm::vec3(1.0f, 0.3f, 0.5f)));*/
-
-		glm::mat4 modelMat2 = meshRenderReq2->getModelMatrix();
-		meshRenderReq2->setModelMatrix(glm::rotate(modelMat2, glm::radians(0.5f), glm::vec3(0.0f, 1.0f, 0.0f)));
 		
+		float ws = 0.0;
+		float ad = 0.0;
+		if (moveForward)
+			ws += 0.4;
+		if (moveBackward)
+			ws -= 0.4;
+		if (moveLeft)
+			ad += 0.4;
+		if (moveRight)
+			ad -= 0.4;
+
+		auto inverted = glm::mat4(1.0);
+		inverted[0][0] *= -1;
+		inverted[1][1] *= -1;
+
+		cameraYaw += mouseDeltaX*0.01;
+		cameraPitch += mouseDeltaY*0.01;
+
+		cameraPitch = std::clamp(cameraPitch, -1.5708f, 1.5708f);
+
+
+		 // Create a quaternion for the rotation
+    	glm::quat q1 = glm::angleAxis(cameraPitch, glm::vec3(1.0,0.0,0.0));
+		// Create a quaternion for the rotation
+    	glm::quat q2 = glm::angleAxis(cameraYaw, glm::vec3(0.0,1.0,0.0));
+
+		// Convert quaternion to a 4x4 rotation matrix
+    	glm::mat4 rotMat = glm::toMat4(q1*q2);
+
+		renderer.viewMatrix = glm::translate (rotMat, cameraPos); 
+
+		float amount = moveForward ? 0.15 : 0.0;
+		glm::vec3 cameraDir = glm::inverse(rotMat) * glm::vec4(0.0,0.0,1.0, 1.0);   
+		cameraPos += cameraDir * amount;
 		
+		float aspectRatio = (float)w/(float)h;
+		glm::mat4 projection = glm::perspective(glm::radians(80.0f), aspectRatio, 0.01f, 1000.0f);
+		renderer.projectionMatrix = projection;
+
 		if (canRender == 0)
 		{
 			renderer.render();
@@ -237,10 +417,11 @@ int init_engine()
 		// Example ImGui window
 		ImGui::Begin("Test Window");
 		
-		ImGui::Text("Hello, world!");
-		ImGui::Button("I am Pressy the button!");
-		float values[5] = {0.5, 0.4, 0.3, 0.56, 0.46};
-		ImGui::PlotHistogram("I am a plot!", values, 5);
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		//ImGui::Text("Hello, world!");
+		//ImGui::Button("I am Pressy the button!");
+		//float values[5] = {0.5, 0.4, 0.3, 0.56, 0.46};
+		//ImGui::PlotHistogram("I am a plot!", values, 5);
 		
 		ImGui::End();
 

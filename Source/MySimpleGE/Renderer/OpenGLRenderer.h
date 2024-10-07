@@ -6,11 +6,12 @@
 #include <string>
 #include <memory>
 #include <cassert>
+#include <glm/glm.hpp>
 
 namespace MSGE 
 {
 
-class GLStaticModelRenderRequest;
+class GLStaticMeshRenderRequest;
 
 class OpenGLRenderer 
 {
@@ -48,11 +49,19 @@ public:
 
     void printResources();
 
-    void addToRenderList(std::shared_ptr<GLStaticModelRenderRequest> renderRequest);
+    void addToRenderList(std::shared_ptr<GLStaticMeshRenderRequest> renderRequest);
+
+    glm::mat4 projectionMatrix = glm::mat4(1.0);
+    glm::mat4 viewMatrix = glm::mat4(1.0);
+
+    static const glm::mat4 ZUpMatrix;
+    //static const float pi = glm::pi<float>();
+    //static constexpr glm::mat4 ZUpMatrix = glm::rotate(glm::mat4(1.0), pi/2.0f, glm::vec3(1.0,0.0,0.0));
 
 private:
-    std::list<std::shared_ptr<GLStaticModelRenderRequest>> _renderList;
+    std::list<std::shared_ptr<GLStaticMeshRenderRequest>> _renderList;
     ReferenceManager<IGLResource, std::string> _glResourceManager;
 
 };
+
 }

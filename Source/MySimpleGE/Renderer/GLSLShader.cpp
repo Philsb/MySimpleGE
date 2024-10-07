@@ -35,6 +35,7 @@ void GLSLShader::create()
 
 void GLSLShader::setAndCompileShader(const std::string& vShaderSource, const std::string& fShaderSource)
 {
+
     GLuint _vertexShader = glCreateShader(GL_VERTEX_SHADER);
     auto vShaderSource_c = vShaderSource.c_str();
     glShaderSource(_vertexShader, 1, &vShaderSource_c, NULL);

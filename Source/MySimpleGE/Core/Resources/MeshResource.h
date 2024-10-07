@@ -10,11 +10,10 @@ class MeshResource: public IResource
 public:
     MeshResource();
     ~MeshResource();
-    void load(const std::string& path) override;
+    void load(const ResourcePath& resPath) override;
     const Mesh& getMeshData() const {return _meshData;}
 private:
     Mesh _meshData;
-
 };
 
 

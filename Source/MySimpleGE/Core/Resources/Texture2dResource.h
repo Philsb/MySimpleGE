@@ -4,14 +4,13 @@
 
 namespace MSGE
 {
-
-class Texture2dResource : IResource
+class Texture2dResource : public IResource
 {
 public:
     Texture2dResource();
     ~Texture2dResource();
 
-    void load(const std::string& path) override;
+    void load(const ResourcePath& resPath) override;
     inline int getWidth() const {return _width;};
     inline int getHeight() const {return _height;};
     const std::vector<unsigned char>& getImageData() const {return _imageData;};

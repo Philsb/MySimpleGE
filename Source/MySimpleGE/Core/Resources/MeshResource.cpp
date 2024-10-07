@@ -1,5 +1,7 @@
 #include <MySimpleGE/Core/Resources/MeshResource.h>
 #include <nlohmann/json.hpp>
+#include <MySimpleGe/Core/Utils/JsonUtils.h>
+#include <MySimpleGE/Core/Utils/Timer.h>
 #include <fstream>
 #include <iostream>
 
@@ -10,105 +12,119 @@ namespace MSGE
 MeshResource::MeshResource()
 {
 }
+
 MeshResource::~MeshResource()
 {
 }
-void MeshResource::load(const std::string& path)
-{
-    std::ifstream f(path);
 
+void MeshResource::load(const ResourcePath& resPath)
+{
+    std::ifstream f(resPath.getPath());
     if (!f)
     {
-        std::cerr << "WARNING: Couldn't open file: " << path << "\n";
+        std::cerr << "WARNING: Couldn't open file: " << resPath.getPath() << "\n";
         return;
     }
 
-
-    json data = json::parse(f);
-    auto assetTypeIt = data.find("res_type"); 
-
-    if (assetTypeIt == data.end()) {
-        std::cerr << "ERROR Loaded resource from: " << path << ", doesn't have asset_type key" "\n";
-        return;
-    }
-
-    if (*assetTypeIt != "mesh")
+    //TODO: VALIDATE with non hardcoded res types, like const resMeshType = "mesh" or something like that  
+    const json& data = json::parse(f);
+    if (JsonUtils::hasValidResType(data, "mesh"))
     {
-        std::cerr << "ERROR Loaded resource from: " << path << ", is not of MESH type" "\n";
+        std::cerr << "ERROR Loaded resource from: " << resPath.getPath() << ", is not of MESH type or does not have resType key\n";
         return;
     }
-
-
+    
     bool errorReading = false;
-    auto verticesObjIt = data.find("vertices");
-    std::vector<MeshVertex> vertices;
-    vertices.reserve(4);
-    if (verticesObjIt != data.end())
-    {
-        auto verticesArray = *verticesObjIt;
-        if (verticesArray.is_array())
-        {
-            auto verticesIt = verticesArray.begin();
-            while (verticesIt != verticesArray.end())
-            {
+    std::vector<MeshSegment> meshSegments;
 
-                MeshVertex v;
-                double readingBuf[8] = {0};
-                for (int i = 0; i < 8; i++)
+    const auto& meshesArrayValue = data["meshes"];
+
+    if (meshesArrayValue.is_array())
+    {
+        const auto& meshesArray = meshesArrayValue.get<json::array_t>();   
+        for (const auto& mesh : meshesArray)
+        {
+            //TODO: reserve N amount of vertices from the start using the json array amount
+            std::vector<MeshVertex> currentVerVector;
+            std::vector<unsigned int> currentIdxVector;
+            
+
+            const auto& verticesArrayValue = mesh["vertices"];
+            if (verticesArrayValue.is_string())
+            {
+                const std::string& verticesArray = verticesArrayValue;
+                const std::vector<unsigned char>& base64Buffer = JsonUtils::base64_decode(verticesArray);
+                // Convert byte array to float array
+                size_t numVerts = base64Buffer.size() / sizeof(MeshVertex);
+                //std::vector<float> floatArray(numFloats);
+                currentVerVector.resize(numVerts);
+                std::memcpy(currentVerVector.data(), base64Buffer.data(), base64Buffer.size());
+                
+
+                //currentVerVector.reserve(verticesArray.size());
+                /*
+                auto verticesArrayIt = verticesArray.begin();
+                while (verticesArrayIt != verticesArray.end())
                 {
-                    if (verticesIt == verticesArray.end())
-                        break;
-                    if ((*verticesIt).is_number())
-                        readingBuf[i] = *verticesIt;
-                    ++verticesIt;
+                    MeshVertex v;
+                    double readingBuf[8] = {0};
+                    for (int i = 0; i < 8; i++)
+                    {
+                        if (verticesArrayIt == verticesArray.end())
+                            break;
+                        if ((*verticesArrayIt).is_number())
+                            readingBuf[i] = *verticesArrayIt;
+                        ++verticesArrayIt;
+                    }
+
+                    //TODO: Is there a better way to do this?
+                    v.position.x = readingBuf[0];
+                    v.position.y = readingBuf[1];
+                    v.position.z = readingBuf[2];
+                    v.normal.x = readingBuf[3];
+                    v.normal.y = readingBuf[4];
+                    v.normal.z = readingBuf[5];
+                    v.uv1.x = readingBuf[6];
+                    v.uv1.y = readingBuf[7];
+
+                    currentVerVector.push_back(v);
                 }
-
-                //TODO: Is there a better way to do this?
-                v.position.x = readingBuf[0];
-                v.position.y = readingBuf[1];
-                v.position.z = readingBuf[2];
-                v.normal.x = readingBuf[3];
-                v.normal.y = readingBuf[4];
-                v.normal.z = readingBuf[5];
-                v.uv1.x = readingBuf[6];
-                v.uv1.y = readingBuf[7];
-
-                vertices.push_back(v);
+                */
             }
-        }
-        else 
-        {
-            return;
-        }
-    }
-    else 
-    {
-        return;
-    }
-
-    auto indicesObjIt = data.find("indices");
-    std::vector<unsigned int> indices;
-    indices.reserve(4);
-    if (indicesObjIt != data.end())
-    {
-        auto indicesArray = *indicesObjIt;
-        if (indicesArray.is_array())
-        {
-            for (auto v : indicesArray)
+            
+            const auto& indicesArrayValue = mesh["indices"];
+            if (indicesArrayValue.is_string())
             {
-                if (v.is_number())  
-                    indices.push_back(v);
+
+                const std::string& indicesArray = indicesArrayValue;
+                const std::vector<unsigned char>& base64Buffer = JsonUtils::base64_decode(indicesArray);
+                
+                // Convert byte array to float array
+                size_t numIdxs = base64Buffer.size() / sizeof(unsigned int);
+                //std::vector<float> floatArray(numFloats);
+                currentIdxVector.resize(numIdxs);
+                std::memcpy(currentIdxVector.data(), base64Buffer.data(), base64Buffer.size());
+
+                
+                //const auto& indicesArray = indicesArrayValue.get<json::array_t>();
+
+                /*
+                currentIdxVector.reserve(indicesArray.size());
+                for (const auto& idxValue : indicesArray)
+                {
+                    if (idxValue.is_number())  
+                        currentIdxVector.push_back(idxValue);
+                }*/
+
             }
-        }
-        else 
-        {
-            return;
+              
+            meshSegments.push_back({std::move(currentVerVector), std::move(currentIdxVector)});
+
         }
     }
 
-    _meshData.setGeometry(vertices, indices);
-
-    std::cout << "Loaded MESH resource from: " << path << "\n";
+    _meshData.setGeometry(std::move(meshSegments));
+    //std::cout << "Loaded MESH resource from: " << resPath.getPath() << "\n";
 }
 
 }
