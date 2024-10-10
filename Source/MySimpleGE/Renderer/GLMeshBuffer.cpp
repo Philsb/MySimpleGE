@@ -34,14 +34,18 @@ namespace MSGE
         //glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(MeshVertex), &vertices.front(), GL_STATIC_DRAW);
 
         // position attribute
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
         // Normal attribute
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3* sizeof(float)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(3* sizeof(float)));
         glEnableVertexAttribArray(1);
         // uv1 attribute
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6* sizeof(float)));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(6* sizeof(float)));
         glEnableVertexAttribArray(2);
+
+        // lightmap attribute
+        glVertexAttribPointer(3, 2, GL_FLOAT, GL_FALSE, 10 * sizeof(float), (void*)(8* sizeof(float)));
+        glEnableVertexAttribArray(3);
 
         _status = GLResStatus::VALID;
 

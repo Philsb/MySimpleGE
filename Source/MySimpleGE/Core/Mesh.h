@@ -10,6 +10,7 @@ struct MeshVertex
     glm::vec3 position;
     glm::vec3 normal;
     glm::vec2 uv1;
+    glm::vec2 lightUV;
 };
 
 struct MeshSegment

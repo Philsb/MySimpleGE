@@ -6,7 +6,7 @@ using json = nlohmann::json;
 
 namespace MSGE
 {
-
+//https://stackoverflow.com/questions/180947/base64-decode-snippet-in-c
 std::vector<unsigned char> JsonUtils::base64_decode(const std::string& encoded_string) 
 {
   int in_len = encoded_string.size();

@@ -74,6 +74,9 @@ void OpenGLRenderer::render()
         shader->setMat4Uniform("modelMat", ZUpMatrix * req->modelMatrix);
         shader->setMat4Uniform("viewMat", viewMatrix);
         shader->setMat4Uniform("projMat", projectionMatrix);
+        shader->setVec2Uniform("lightmapTiling", req->lightMapUVTiling);
+        shader->setVec2Uniform("lightmapOffset", req->lightMapUVOffset);
+        //shader->setVec3Uniform("lightPoint", glm::inverse(viewMatrix) * glm::vec4(0.0,0.0,0.0,1.0) );
         
         //Bind textures
         int slot = 0;

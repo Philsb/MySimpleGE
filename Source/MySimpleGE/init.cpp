@@ -159,7 +159,7 @@ int init_engine()
 	}
 
 	// Enable OpenGL error reporting
-	enableReportGlErrors();
+	//enableReportGlErrors();
 
 	OpenGLRenderer renderer;
 	auto resManager = Singleton<ResourceManager>::getInstance();
@@ -196,16 +196,13 @@ int init_engine()
 	ImGui_ImplOpenGL3_Init("#version 330");
 #pragma endregion
 
-	
+	/*
 	std::vector<std::shared_ptr<Material>> newMaterials;
 
 	auto carMesh = resManager->load<MeshResource>("car.json");
 	auto carBodyTex = resManager->load<Texture2dResource>("car_body.png");
 	auto carChasisTex = resManager->load<Texture2dResource>("car_chasis.png");
-
 	auto matBody = resManager->load<Material>("car_body.mat.json");
-
-
 	auto matChasis = resManager->load<Material>("car_chasis.mat.json");
 
 	newMaterials.push_back(matBody);
@@ -220,11 +217,12 @@ int init_engine()
 	comp2.modelMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(-3.0f, 0.0f, -4.0f));
 	comp2.updateRequests();
 	comp2.addRequestsToRenderList();
+	*/
 	
 	ScopedTimer st("SCENE LOAD: ");
 	#pragma region sceneload
 
-	std::ifstream f(ResourcePath("Scene1.scene.json"));
+	std::ifstream f(ResourcePath("SampleScene.json"));
     if (f)
     {
 		using json = nlohmann::json;
@@ -309,7 +307,38 @@ int init_engine()
 
 						} 
 					}
-					GLStaticMeshComponent staticMeshComp(&renderer, meshPath, objectMaterials);
+
+					auto lightMapTiling = object["lightmapUVTiling"];
+					glm::vec2 lightMapUVTiling(1.0);
+					if (lightMapTiling.is_array())
+					{
+						auto vec = lightMapTiling.get<json::array_t>();
+						for (int i = 0; i < std::min(2, (int)vec.size()) ; i++)
+						{
+							lightMapUVTiling[i] = vec[i];
+						}
+					}
+
+					auto lightMapOffset = object["lightmapUVOffset"];
+					glm::vec2 lightMapUVOffset(1.0);
+					if (lightMapOffset.is_array())
+					{
+						auto vec = lightMapOffset.get<json::array_t>();
+						for (int i = 0; i < std::min(2, (int)vec.size()) ; i++)
+						{
+							lightMapUVOffset[i] = vec[i];
+						}
+					}
+
+					ResourcePath lightMapTexPath;
+					auto lightmapTexPathVal = object["lightmapTexName"];
+					if (lightmapTexPathVal.is_string())
+					{
+						lightMapTexPath = lightmapTexPathVal.get<std::string>();
+					}
+
+
+					GLStaticMeshComponent staticMeshComp(&renderer, meshPath, objectMaterials, lightMapUVTiling, lightMapUVOffset, lightMapTexPath);
 					staticMeshComp.modelMatrix = transform;
 					staticMeshComp.updateRequests();
 					staticMeshComp.addRequestsToRenderList();

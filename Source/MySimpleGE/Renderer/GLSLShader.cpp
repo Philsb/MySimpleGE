@@ -105,6 +105,24 @@ void GLSLShader::setMat4Uniform(const std::string& uniformName, glm::mat4 matrix
     glUniformMatrix4fv(uniformLoc, 1, GL_FALSE, &matrix[0][0]);
 }
 
+void GLSLShader::setVec3Uniform(const std::string& uniformName, glm::vec3 vector)
+{
+    if (!_isBound)
+        return;
+    //This is a bit of overhead instead of caching uniform locations, but it lets us be more generic
+    int uniformLoc = glGetUniformLocation(_shaderProgram, uniformName.c_str());
+    glUniform3fv(uniformLoc, 1, &vector[0]);
+}
+
+void GLSLShader::setVec2Uniform(const std::string& uniformName, glm::vec2 vector)
+{
+    if (!_isBound)
+        return;
+    //This is a bit of overhead instead of caching uniform locations, but it lets us be more generic
+    int uniformLoc = glGetUniformLocation(_shaderProgram, uniformName.c_str());
+    glUniform2fv(uniformLoc, 1, &vector[0]);
+}
+
 void GLSLShader::setTextureUniform(const std::string& uniformName, GLint textureId)
 {
     if (!_isBound)

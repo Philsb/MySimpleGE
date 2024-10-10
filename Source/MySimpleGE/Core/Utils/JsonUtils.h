@@ -9,6 +9,10 @@ namespace MSGE
 namespace JsonUtils
 {
 
+/*
+CREDITS FOR BASE 64 decoding 
+https://stackoverflow.com/questions/180947/base64-decode-snippet-in-c
+*/
 static const std::string base64_chars =
              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
              "abcdefghijklmnopqrstuvwxyz"

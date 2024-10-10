@@ -25,5 +25,7 @@ struct GLStaticMeshRenderRequest
     std::shared_ptr<GLMeshBuffer> meshBuffer;
     std::shared_ptr<GLSLShader> shader;
     std::vector<GLTextureUniform> texturesUniforms;
+    glm::vec2 lightMapUVTiling = glm::vec2(0.0);
+    glm::vec2 lightMapUVOffset = glm::vec2(0.0);
 };
 }

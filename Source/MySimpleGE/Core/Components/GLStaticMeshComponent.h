@@ -18,7 +18,11 @@ public:
 
     GLStaticMeshComponent(OpenGLRenderer* renderer, 
                             ResourcePath staticMeshPath, 
-                            const std::vector<std::shared_ptr<Material>>& newMaterials);
+                            const std::vector<std::shared_ptr<Material>>& newMaterials,
+                            glm::vec2 lightMapUVTiling,
+                            glm::vec2 lightMapUVOffset,
+                            ResourcePath lightMapTexPath);
+
     ~GLStaticMeshComponent(){}
     void updateRequests();
     void addRequestsToRenderList();
@@ -29,6 +33,9 @@ private:
     OpenGLRenderer* _renderer = nullptr;
     ResourcePath _staticMeshPath = "";
     std::vector<std::shared_ptr<Material>> _materials;
+    ResourcePath _lightMapTexPath = "";
+    glm::vec2 _lightMapUVTiling = glm::vec2(0.0);
+    glm::vec2 _lightMapUVOffset = glm::vec2(0.0);
     std::vector<std::shared_ptr<GLStaticMeshRenderRequest>> _renderRequests;
 };
 

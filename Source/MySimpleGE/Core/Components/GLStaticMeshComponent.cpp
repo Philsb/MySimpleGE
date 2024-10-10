@@ -15,10 +15,17 @@
 namespace MSGE
 {
 GLStaticMeshComponent::GLStaticMeshComponent(OpenGLRenderer* renderer, 
-                                            ResourcePath staticMeshPath, const std::vector<std::shared_ptr<Material>>& newMaterials)
+                                            ResourcePath staticMeshPath, 
+                                            const std::vector<std::shared_ptr<Material>>& newMaterials,
+                                            glm::vec2 lightMapUVTiling,
+                                            glm::vec2 lightMapUVOffset,
+                                            ResourcePath lightMapTexPath)
 :_renderer(renderer),
 _staticMeshPath(staticMeshPath),
-_materials(newMaterials)
+_materials(newMaterials),
+_lightMapUVTiling(lightMapUVTiling),
+_lightMapUVOffset(lightMapUVOffset),
+_lightMapTexPath(lightMapTexPath)
 {
     setup();
 }
@@ -82,6 +89,21 @@ void GLStaticMeshComponent::setup()
 
             }
 
+            //For each texture load or get its gl resource counterpart and then add to req
+            auto gllightmapTex = _renderer->getGLResource<GLTexture2d>( _lightMapTexPath );
+            if (!gllightmapTex)
+            {
+                gllightmapTex = _renderer->allocateGLResource<GLTexture2d>( _lightMapTexPath );
+                auto lightexRes = resManager->load<Texture2dResource>(_lightMapTexPath);
+                if (lightexRes)
+                {
+                    gllightmapTex->setData(lightexRes->getWidth(), lightexRes->getHeight(), lightexRes->getImageData());              
+                }
+            }
+            renderReq->texturesUniforms.push_back({ "LightmapTex", gllightmapTex});
+            renderReq->lightMapUVOffset = _lightMapUVOffset;
+            renderReq->lightMapUVTiling = _lightMapUVTiling;
+            
             renderReq->modelMatrix = this->modelMatrix;
             renderReq->meshBuffer = meshBuffer;
             renderReq->shader = shaderRef;

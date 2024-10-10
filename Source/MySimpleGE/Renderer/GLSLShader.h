@@ -27,6 +27,8 @@ public:
 
     void setTextureUniform(const std::string& uniformName, GLint textureId);
     void setMat4Uniform(const std::string& uniformName, glm::mat4 matrix);
+    void setVec3Uniform(const std::string& uniformName, glm::vec3 vector);
+    void setVec2Uniform(const std::string& uniformName, glm::vec2 vector);
     
 private:
     GLuint _shaderProgram;
