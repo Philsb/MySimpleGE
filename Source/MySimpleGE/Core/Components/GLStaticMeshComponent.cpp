@@ -5,7 +5,7 @@
 #include <MySimpleGE/Core/Resources/Material.h>
 #include <MySimpleGE/Core/Singleton.h>
 
-#include <MySimpleGE/Renderer/OpenGLRenderer.h>
+#include <MySimpleGE/Renderer/GLSceneRenderer.h>
 #include <MySimpleGE/Renderer/GLMeshBuffer.h>
 #include <MySimpleGE/Renderer/GLTexture2d.h>
 #include <MySimpleGE/Renderer/GLSLShader.h>
@@ -14,7 +14,7 @@
 
 namespace MSGE
 {
-GLStaticMeshComponent::GLStaticMeshComponent(OpenGLRenderer* renderer, 
+GLStaticMeshComponent::GLStaticMeshComponent(GLSceneRenderer* renderer, 
                                             ResourcePath staticMeshPath, 
                                             const std::vector<std::shared_ptr<Material>>& newMaterials,
                                             glm::vec2 lightMapUVTiling,

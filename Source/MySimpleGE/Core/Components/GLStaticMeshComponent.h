@@ -7,7 +7,7 @@
 
 namespace MSGE
 {
-class OpenGLRenderer;
+class GLSceneRenderer;
 class GLStaticMeshRenderRequest;
 class Material;
 
@@ -16,7 +16,7 @@ class GLStaticMeshComponent
 public:
     glm::mat4 modelMatrix = glm::mat4(1.0f);
 
-    GLStaticMeshComponent(OpenGLRenderer* renderer, 
+    GLStaticMeshComponent(GLSceneRenderer* renderer, 
                             ResourcePath staticMeshPath, 
                             const std::vector<std::shared_ptr<Material>>& newMaterials,
                             glm::vec2 lightMapUVTiling,
@@ -30,7 +30,7 @@ public:
 private:
     void setup();
     
-    OpenGLRenderer* _renderer = nullptr;
+    GLSceneRenderer* _renderer = nullptr;
     ResourcePath _staticMeshPath = "";
     std::vector<std::shared_ptr<Material>> _materials;
     ResourcePath _lightMapTexPath = "";

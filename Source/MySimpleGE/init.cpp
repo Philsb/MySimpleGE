@@ -7,7 +7,7 @@
 #include <MySimpleGE/Core/Resources/Material.h>
 #include <MySimpleGE/Core/Resources/MeshResource.h>
 #include <MySimpleGE/Core/Resources/Texture2dResource.h>
-#include <MySimpleGE/Renderer/OpenGLRenderer.h>
+#include <MySimpleGE/Renderer/GLSceneRenderer.h>
 #include <MySimpleGE/Core/Components/GLStaticMeshComponent.h>
 #include <MySimpleGE/Core/Utils/Timer.h>
 
@@ -161,7 +161,7 @@ int init_engine()
 	// Enable OpenGL error reporting
 	//enableReportGlErrors();
 
-	OpenGLRenderer renderer;
+	GLSceneRenderer renderer;
 	auto resManager = Singleton<ResourceManager>::getInstance();
 
 	std::cout << "MAP COUNT REFERENCES:" << resManager->getCacheMap().size() << std::endl;

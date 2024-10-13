@@ -1,4 +1,4 @@
-#include <MySimpleGE/Renderer/OpenGLRenderer.h>
+#include <MySimpleGE/Renderer/GLSceneRenderer.h>
 #include <MySimpleGE/Renderer/GLTexture2d.h>
 #include <MySimpleGE/Renderer/GLSLShader.h>
 #include <MySimpleGE/Renderer/GLResource.h>
@@ -15,24 +15,24 @@
 namespace MSGE 
 {
 
-const glm::mat4 OpenGLRenderer::ZUpMatrix = glm::rotate(glm::mat4(1.0),  glm::radians(-90.0f), glm::vec3(1.0,0.0,0.0));
+const glm::mat4 GLSceneRenderer::ZUpMatrix = glm::rotate(glm::mat4(1.0),  glm::radians(-90.0f), glm::vec3(1.0,0.0,0.0));
 
-OpenGLRenderer::OpenGLRenderer()
+GLSceneRenderer::GLSceneRenderer()
 {
 
 }
 
-OpenGLRenderer::~OpenGLRenderer()
+GLSceneRenderer::~GLSceneRenderer()
 {
     std::cout << "GL Resource Map count ref: " << _glResourceManager.getCacheMap().size() << std::endl;
 }
 
-bool OpenGLRenderer::hasGLResource(const std::string& id)
+bool GLSceneRenderer::hasGLResource(const std::string& id)
 {
     return _glResourceManager.hasRef(id);
 }
 
-int OpenGLRenderer::init(GLADloadproc glLoader) 
+int GLSceneRenderer::init(GLADloadproc glLoader) 
 {
     if (!gladLoadGLLoader(glLoader))
         return 1;
@@ -43,12 +43,12 @@ int OpenGLRenderer::init(GLADloadproc glLoader)
     return 0;
 }
 
-void OpenGLRenderer::emptyRenderList()
+void GLSceneRenderer::emptyRenderList()
 {   
     _renderList.clear();
 }
 
-void OpenGLRenderer::printResources()
+void GLSceneRenderer::printResources()
 {
     for (auto it : _glResourceManager.getCacheMap())
     {
@@ -56,12 +56,12 @@ void OpenGLRenderer::printResources()
     }
 }
 
-void OpenGLRenderer::addToRenderList(std::shared_ptr<GLStaticMeshRenderRequest> renderRequest)
+void GLSceneRenderer::addToRenderList(std::shared_ptr<GLStaticMeshRenderRequest> renderRequest)
 {
     return _renderList.push_back(renderRequest);
 }
 
-void OpenGLRenderer::render() 
+void GLSceneRenderer::render() 
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 

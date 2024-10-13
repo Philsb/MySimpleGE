@@ -13,11 +13,11 @@ namespace MSGE
 
 class GLStaticMeshRenderRequest;
 
-class OpenGLRenderer 
+class GLSceneRenderer 
 {
 public:
-    OpenGLRenderer();
-    ~OpenGLRenderer();
+    GLSceneRenderer();
+    ~GLSceneRenderer();
 
     int init(GLADloadproc);
     void render();
